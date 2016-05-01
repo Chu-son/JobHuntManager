@@ -5,16 +5,34 @@
     android:layout_height="wrap_content"
     android:layout_width="match_parent">
 
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Name"
+        android:id="@+id/companyNameTextView"
+        android:layout_weight="1"
+        android:singleLine="false" />
     <EditText
         android:layout_height="wrap_content"
-        android:layout_weight="1" android:id="@+id/memoEditText"
+        android:layout_weight="1"
+        android:id="@+id/companyNameEditText"
         android:layout_width="match_parent"
         android:inputType="textMultiLine">
         <requestFocus/>
     </EditText>
-    <Button
-        android:text="Save"
-        android:id="@+id/saveButton"
+
+    <TextView
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content"/>
+        android:layout_height="wrap_content"
+        android:text="Memo"
+        android:id="@+id/memoTextView"
+        android:layout_weight="1" />
+    <EditText
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:id="@+id/memoEditText"
+        android:layout_width="match_parent"
+        android:inputType="textMultiLine"
+        android:lines="5"
+        android:gravity="top|left"/>
 </LinearLayout>

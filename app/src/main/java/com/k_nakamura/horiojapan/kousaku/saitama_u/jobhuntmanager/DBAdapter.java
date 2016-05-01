@@ -8,12 +8,13 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
 public class DBAdapter {
-    static final String DATABASE_NAME = "mynote.db";
+    static final String DATABASE_NAME = "mycompany.db";
     static final int DATABASE_VERSION = 1;
-    public static final String TABLE_NAME = "notes";
+    public static final String TABLE_NAME = "companys";
     public static final String COL_ID = "_id";
-    public static final String COL_NOTE = "note";
+    public static final String COL_COMPANY = "company";
     public static final String COL_LASTUPDATE = "lastupdate";
+    public static final String COL_MEMO = "memo";
     protected final Context context;
 
     protected DatabaseHelper dbHelper;
@@ -33,14 +34,18 @@ public class DBAdapter {
         }
 
         @Override public void onCreate(SQLiteDatabase db) {
-            db.execSQL( "CREATE TABLE " + TABLE_NAME + " ("
+            db.execSQL(
+                    "CREATE TABLE " + TABLE_NAME + " ("
                     + COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-                    + COL_NOTE + " TEXT NOT NULL,"
-                    + COL_LASTUPDATE + " TEXT NOT NULL);");
+                    + COL_COMPANY + " TEXT NOT NULL,"
+                    + COL_LASTUPDATE + " TEXT NOT NULL,"
+                    + COL_MEMO + " TEXT NOT NULL);"
+            );
         }
 
         @Override public void onUpgrade( SQLiteDatabase db, int oldVersion, int newVersion) {
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME); onCreate(db);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NAME);
+            onCreate(db);
         }
     }
 
@@ -58,27 +63,37 @@ public class DBAdapter {
     //
     // App Methods
     //
-    public boolean deleteAllNotes(){
+    public boolean deleteAllCompanys(){
         return db.delete(TABLE_NAME, null, null) > 0;
     }
-    public boolean deleteNote(int id){
+    public boolean deleteCompany(int id){
         return db.delete(TABLE_NAME, COL_ID + "=" + id, null) > 0;
     }
-    public Cursor getAllNotes(){
+    public Cursor getAllCompanys(){
         return db.query(TABLE_NAME, null, null, null, null, null, null);
     }
-    public void saveNote(String note){
+    public void saveCompany(String company){
         Date dateNow = new Date ();
         ContentValues values = new ContentValues();
-        values.put(COL_NOTE, note);
+        values.put(COL_COMPANY, company);
         values.put(COL_LASTUPDATE, dateNow.toLocaleString());
         db.insertOrThrow(TABLE_NAME, null, values);
     }
-    public void saveNote(Note note)
+    public void saveCompany(Company company)
     {
         ContentValues values = new ContentValues();
-        values.put(COL_NOTE, note.getNote());
-        values.put(COL_LASTUPDATE, note.getLastupdate());
+        values.put(COL_COMPANY, company.getCompany());
+        values.put(COL_LASTUPDATE, company.getLastupdate());
+        values.put(COL_MEMO,company.getMemo());
         db.insertOrThrow(TABLE_NAME, null, values);
+    }
+
+    public void update(Company company)
+    {
+        ContentValues values = new ContentValues();
+        values.put(COL_COMPANY, company.getCompany());
+        values.put(COL_LASTUPDATE, company.getLastupdate());
+        values.put(COL_MEMO,company.getMemo());
+        db.update(TABLE_NAME, values,COL_ID+"=?", new String[]{""+ company.getId()});
     }
 }

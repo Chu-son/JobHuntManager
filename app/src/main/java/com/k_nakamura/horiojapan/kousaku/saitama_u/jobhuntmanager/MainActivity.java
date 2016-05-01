@@ -21,8 +21,6 @@ import android.view.View.OnClickListener;
 import android.view.View.OnCreateContextMenuListener;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
-import android.widget.Button;
-import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -30,12 +28,14 @@ import android.widget.Toast;
 public class MainActivity extends ActionBarActivity implements OnClickListener {
     static final String TAG = "MainActivity";
     static final int MENUITEM_ID_DELETE = 1;
+    static final int MENUITEM_ID_EDIT = 2;
+
 
     ListView itemListView;
 
     static DBAdapter dbAdapter;
-    static NoteListAdapter listAdapter;
-    static List<Note> noteList = new ArrayList<Note>();
+    static CompanyListAdapter listAdapter;
+    static List<Company> companyList = new ArrayList<Company>();
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,28 +43,29 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
         findViews();
         setListeners();
         dbAdapter = new DBAdapter(this);
-        listAdapter = new NoteListAdapter();
+        listAdapter = new CompanyListAdapter();
         itemListView.setAdapter(listAdapter);
-        loadNote();
+        loadCompany();
     }
 
     protected void findViews(){
         itemListView = (ListView)findViewById(R.id.itemListView);
     }
-    protected void loadNote(){
-        noteList.clear();
+    protected void loadCompany(){
+        companyList.clear();
         // Read
         dbAdapter.open();
-        Cursor c = dbAdapter.getAllNotes();
+        Cursor c = dbAdapter.getAllCompanys();
         startManagingCursor(c);
         if(c.moveToFirst()){
             do {
-                Note note = new Note(
+                Company company = new Company(
                         c.getInt(c.getColumnIndex(DBAdapter.COL_ID)),
-                        c.getString(c.getColumnIndex(DBAdapter.COL_NOTE)),
-                        c.getString(c.getColumnIndex(DBAdapter.COL_LASTUPDATE))
+                        c.getString(c.getColumnIndex(DBAdapter.COL_COMPANY)),
+                        c.getString(c.getColumnIndex(DBAdapter.COL_LASTUPDATE)),
+                        c.getString(c.getColumnIndex(DBAdapter.COL_MEMO))
                 );
-                noteList.add(note);
+                companyList.add(company);
             } while(c.moveToNext());
         }
         stopManagingCursor(c);
@@ -75,6 +76,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
         itemListView.setOnCreateContextMenuListener(
                 new OnCreateContextMenuListener(){
                     @Override public void onCreateContextMenu( ContextMenu menu, View v, ContextMenuInfo menuInfo) {
+                        menu.add(0,MENUITEM_ID_EDIT,0,"Edit");
                         menu.add(0, MENUITEM_ID_DELETE, 0, "Delete");
                     }
                 }
@@ -82,24 +84,25 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
     }
 
     @Override public boolean onContextItemSelected(MenuItem item) {
+        AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
+        Company company = companyList.get(menuInfo.position);
+        final int companyId = company.getId();
+
         switch(item.getItemId()){
             case MENUITEM_ID_DELETE:
-                AdapterView.AdapterContextMenuInfo menuInfo = (AdapterView.AdapterContextMenuInfo)item.getMenuInfo();
-                Note note = noteList.get(menuInfo.position);
-                final int noteId = note.getId();
                 new AlertDialog.Builder(this)
                         .setIcon(R.mipmap.icon)
-                        .setTitle("Are you sure you want to delete this note?")
+                        .setTitle("Are you sure you want to delete this company?")
                         .setPositiveButton( "Yes",
                                 new DialogInterface.OnClickListener() {
                                     @Override public void onClick(DialogInterface dialog, int which) {
                                         dbAdapter.open();
-                                        if(dbAdapter.deleteNote(noteId)){
+                                        if(dbAdapter.deleteCompany(companyId)){
                                             Toast.makeText( getBaseContext(),
-                                                    "The note was successfully deleted.",
+                                                    "The company was successfully deleted.",
                                                     Toast.LENGTH_SHORT
                                             ).show();
-                                            loadNote();
+                                            loadCompany();
                                         }
                                         dbAdapter.close();
                                     }
@@ -107,6 +110,10 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
                         .setNegativeButton( "Cancel", null)
                         .show();
                 return true;
+
+            case MENUITEM_ID_EDIT:
+                editContent(company);
+
         }
         return super.onContextItemSelected(item);
     }
@@ -116,13 +123,13 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
         }
     }
 
-    private class NoteListAdapter extends BaseAdapter {
+    private class CompanyListAdapter extends BaseAdapter {
         @Override public int getCount() {
-            return noteList.size();
+            return companyList.size();
         }
 
         @Override public Object getItem(int position) {
-            return noteList.get(position);
+            return companyList.get(position);
         }
 
         @Override public long getItemId(int position) {
@@ -130,7 +137,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
         }
 
         @Override public View getView(int position, View convertView, ViewGroup parent) {
-            TextView noteTextView;
+            TextView companyTextView;
             TextView lastupdateTextView;
             View v = convertView;
 
@@ -139,24 +146,25 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
                 v = inflater.inflate(R.layout.row, null);
             }
 
-            Note note = (Note)getItem(position);
-            if(note != null){
-                noteTextView = (TextView)v.findViewById(R.id.noteTextView);
+            Company company = (Company)getItem(position);
+            if(company != null){
+                companyTextView = (TextView)v.findViewById(R.id.companyTextView);
                 lastupdateTextView = (TextView)v.findViewById( R.id.lastupdateTextView);
-                noteTextView.setText(note.getNote());
-                lastupdateTextView.setText(note.getLastupdate());
-                //v.setTag(R.id.noteid, note);
+                companyTextView.setText(company.getCompany());
+                lastupdateTextView.setText(company.getLastupdate());
             }
 
             return v;
         }
     }
 
-    private void addContent()
+    private void editContent(Company company)
     {
         Intent intent = new Intent(getApplication(), EditActivity.class);
-        intent.putExtra("Note", new Note(0,"",""));
-        int requestCode = 1000;
+        intent.putExtra("Company", company);
+        int requestCode ;
+        if(company.getId() == 0) requestCode = 1000;
+        else requestCode = 2000;
         startActivityForResult( intent, requestCode );
     }
     @Override
@@ -166,9 +174,12 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
         if(resultCode != RESULT_OK) return;
 
         dbAdapter.open();
-        dbAdapter.saveNote((Note)intent.getSerializableExtra("RESULT"));
+
+        if(requestCode == 1000) dbAdapter.saveCompany((Company)intent.getSerializableExtra("RESULT"));
+        if(requestCode == 2000) dbAdapter.update((Company)intent.getSerializableExtra("RESULT"));
+
         dbAdapter.close();
-        loadNote();
+        loadCompany();
     }
 
     /*
@@ -190,7 +201,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_add) {
-            addContent();
+            editContent(new Company(0,"","",""));
             return true;
         }
 
