@@ -1,26 +1,36 @@
 package com.k_nakamura.horiojapan.kousaku.saitama_u.jobhuntmanager;
 
 import android.content.Intent;
+import android.database.Cursor;
 import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
+import android.widget.LinearLayout;
 import android.widget.Toast;
 
 import java.util.Date;
 
-public class EditActivity extends ActionBarActivity{
+public class EditActivity extends ActionBarActivity implements TextWatcher{
     static final String TAG = "EditActivity";
     static final int MENU_ID_SAVE = 1;
 
     EditText companyNameEditText;
+    EditText kanaEditText;
     EditText memoEditText;
+    LinearLayout scheduleLinearLayout;
+    Button addScheduleButton;
 
     Company company;
+    ScheduleDBAdapter scheduleDBAdapter;
+
+    int count = 0;
 
     @Override public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -29,22 +39,101 @@ public class EditActivity extends ActionBarActivity{
 
         Intent intent = getIntent();
         company = (Company)intent.getSerializableExtra("Company");
-        loadCompany();
+        loadCompanyData();
+
+        scheduleDBAdapter = new ScheduleDBAdapter(this);
+        loadScheduleData();
+
+        addScheduleButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                scheduleLinearLayout.addView(addSchedule("","",""));
+                count++;
+            }
+        });
 
         getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_ALWAYS_VISIBLE);
     }
 
-    private void loadCompany()
+    private void loadCompanyData()
     {
         if(company.getId() == 0) return;
 
         companyNameEditText.setText(company.getCompany());
+        kanaEditText.setText(company.getKana());
         memoEditText.setText(company.getMemo());
+    }
+
+    private void loadScheduleData()
+    {
+        if(company.getScheduleDB().isEmpty()) return;
+        scheduleDBAdapter.open(company.getScheduleDB());
+        Cursor c = scheduleDBAdapter.getAllCompanys();
+        startManagingCursor(c);
+        if(c.moveToFirst()){
+            do {
+                scheduleLinearLayout.addView(addSchedule(
+                        c.getString(c.getColumnIndex(scheduleDBAdapter.COL_SCHEDULENAME)),
+                        c.getString(c.getColumnIndex(scheduleDBAdapter.COL_DATE)),
+                        c.getString(c.getColumnIndex(scheduleDBAdapter.COL_PLACE))
+                ));
+            } while(c.moveToNext());
+        }
+        stopManagingCursor(c);
+        scheduleDBAdapter.close();
+    }
+    private LinearLayout addSchedule(String name,String date,String place)
+    {
+        LinearLayout layout = new LinearLayout(this);
+        LinearLayout.LayoutParams params;
+
+        layout.setOrientation(LinearLayout.HORIZONTAL);
+        layout.setLayoutParams(new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT));
+
+        EditText editText = new EditText(this);
+        editText.setText(name);
+        editText.setHint("Contents");
+        params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.weight = 1f;
+        layout.addView(editText,params);
+
+        editText = new EditText(this);
+        editText.setText(date);
+        editText.setHint("Date");
+        params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.weight = 1.5f;
+        layout.addView(editText,params);
+
+        editText = new EditText(this);
+        editText.setText(place);
+        editText.setHint("Place");
+        params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.weight = 1f;
+        layout.addView(editText,params);
+
+        return layout;
+    }
+    private void saveSchedules()
+    {
+        if(company.getScheduleDB().isEmpty()) return;
+        scheduleDBAdapter.open(company.getScheduleDB());
+        for(int i = scheduleLinearLayout.getChildCount() - count ; i < scheduleLinearLayout.getChildCount() ; i++)
+        {
+            LinearLayout ll = (LinearLayout) scheduleLinearLayout.getChildAt(i);
+            scheduleDBAdapter.saveSchedule(((EditText)ll.getChildAt(0)).getText().toString(),((EditText)ll.getChildAt(1)).getText().toString(),((EditText)ll.getChildAt(2)).getText().toString());
+        }
+        scheduleDBAdapter.close();
     }
 
     protected void findViews(){
         companyNameEditText = (EditText)findViewById(R.id.companyNameEditText);
+        kanaEditText = (EditText)findViewById(R.id.kanaEditText);
+        kanaEditText.addTextChangedListener(this);
         memoEditText = (EditText)findViewById(R.id.memoEditText);
+        scheduleLinearLayout = (LinearLayout)findViewById(R.id.scheduleLinearLayout);
+        addScheduleButton = (Button)findViewById(R.id.addSchedule);
     }
 
 
@@ -53,6 +142,22 @@ public class EditActivity extends ActionBarActivity{
         company.setMemo(memoEditText.getText().toString());
         Date dateNow = new Date ();
         company.setLastupdate(dateNow.toLocaleString());
+        company.setKana(kanaEditText.getText().toString());
+        if(company.getScheduleDB().isEmpty())company.setScheduleDB("table"+company.getKana());
+
+        saveSchedules();
+    }
+
+    @Override
+    public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+    }
+
+    @Override
+    public void onTextChanged(CharSequence s, int start, int before, int count) {
+    }
+
+    @Override
+    public void afterTextChanged(Editable s) {
     }
 
     /*

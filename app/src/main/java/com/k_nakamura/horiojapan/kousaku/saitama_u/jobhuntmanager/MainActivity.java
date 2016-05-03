@@ -63,7 +63,9 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
                         c.getInt(c.getColumnIndex(DBAdapter.COL_ID)),
                         c.getString(c.getColumnIndex(DBAdapter.COL_COMPANY)),
                         c.getString(c.getColumnIndex(DBAdapter.COL_LASTUPDATE)),
-                        c.getString(c.getColumnIndex(DBAdapter.COL_MEMO))
+                        c.getString(c.getColumnIndex(DBAdapter.COL_MEMO)),
+                        c.getString(c.getColumnIndex(DBAdapter.COL_KANA)),
+                        c.getString(c.getColumnIndex(DBAdapter.COL_SCHEDULETABLE))
                 );
                 companyList.add(company);
             } while(c.moveToNext());
@@ -201,7 +203,7 @@ public class MainActivity extends ActionBarActivity implements OnClickListener {
 
         //noinspection SimplifiableIfStatement
         if (id == R.id.action_add) {
-            editContent(new Company(0,"","",""));
+            editContent(new Company(0,"","","","",""));
             return true;
         }
 

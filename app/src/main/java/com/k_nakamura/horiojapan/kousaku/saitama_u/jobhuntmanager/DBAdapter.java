@@ -10,11 +10,15 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DBAdapter {
     static final String DATABASE_NAME = "mycompany.db";
     static final int DATABASE_VERSION = 1;
+
     public static final String TABLE_NAME = "companys";
     public static final String COL_ID = "_id";
     public static final String COL_COMPANY = "company";
     public static final String COL_LASTUPDATE = "lastupdate";
     public static final String COL_MEMO = "memo";
+    public static final String COL_KANA = "kana";
+    public static final String COL_SCHEDULETABLE = "scheduleTable";
+
     protected final Context context;
 
     protected DatabaseHelper dbHelper;
@@ -36,10 +40,12 @@ public class DBAdapter {
         @Override public void onCreate(SQLiteDatabase db) {
             db.execSQL(
                     "CREATE TABLE " + TABLE_NAME + " ("
-                    + COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
-                    + COL_COMPANY + " TEXT NOT NULL,"
-                    + COL_LASTUPDATE + " TEXT NOT NULL,"
-                    + COL_MEMO + " TEXT NOT NULL);"
+                            + COL_ID + " INTEGER PRIMARY KEY AUTOINCREMENT,"
+                            + COL_COMPANY + " TEXT NOT NULL,"
+                            + COL_LASTUPDATE + " TEXT NOT NULL,"
+                            + COL_KANA + " TEXT NOT NULL,"
+                            + COL_SCHEDULETABLE + " TEXT NOT NULL,"
+                            + COL_MEMO + " TEXT NOT NULL);"
             );
         }
 
@@ -72,19 +78,14 @@ public class DBAdapter {
     public Cursor getAllCompanys(){
         return db.query(TABLE_NAME, null, null, null, null, null, null);
     }
-    public void saveCompany(String company){
-        Date dateNow = new Date ();
-        ContentValues values = new ContentValues();
-        values.put(COL_COMPANY, company);
-        values.put(COL_LASTUPDATE, dateNow.toLocaleString());
-        db.insertOrThrow(TABLE_NAME, null, values);
-    }
     public void saveCompany(Company company)
     {
         ContentValues values = new ContentValues();
         values.put(COL_COMPANY, company.getCompany());
         values.put(COL_LASTUPDATE, company.getLastupdate());
         values.put(COL_MEMO,company.getMemo());
+        values.put(COL_KANA,company.getKana());
+        values.put(COL_SCHEDULETABLE,company.getScheduleDB());
         db.insertOrThrow(TABLE_NAME, null, values);
     }
 
@@ -94,6 +95,10 @@ public class DBAdapter {
         values.put(COL_COMPANY, company.getCompany());
         values.put(COL_LASTUPDATE, company.getLastupdate());
         values.put(COL_MEMO,company.getMemo());
-        db.update(TABLE_NAME, values,COL_ID+"=?", new String[]{""+ company.getId()});
+        values.put(COL_KANA,company.getKana());
+        db.update(TABLE_NAME, values,COL_ID + "=?", new String[]{""+ company.getId()});
     }
+
+
+
 }
