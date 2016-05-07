@@ -6,18 +6,23 @@ import android.os.Bundle;
 import android.support.v7.app.ActionBarActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.TypedValue;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.LinearLayout;
+import android.widget.PopupWindow;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.Date;
 
-public class EditActivity extends ActionBarActivity implements TextWatcher{
+public class EditActivity extends ActionBarActivity implements TextWatcher,View.OnClickListener {
     static final String TAG = "EditActivity";
     static final int MENU_ID_SAVE = 1;
 
@@ -92,7 +97,7 @@ public class EditActivity extends ActionBarActivity implements TextWatcher{
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT));
 
-        EditText editText = new EditText(this);
+        /*EditText editText = new EditText(this);
         editText.setText(name);
         editText.setHint("Contents");
         params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -111,7 +116,30 @@ public class EditActivity extends ActionBarActivity implements TextWatcher{
         editText.setHint("Place");
         params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
         params.weight = 1f;
-        layout.addView(editText,params);
+        layout.addView(editText,params);*/
+
+        TextView textView = new TextView(this);
+        textView.setText(name);
+        textView.setHint("Contents");
+        params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.weight = 1f;
+        layout.addView(textView,params);
+
+        textView = new TextView(this);
+        textView.setText(date);
+        textView.setHint("Date");
+        params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.weight = 1.5f;
+        layout.addView(textView,params);
+
+        textView = new TextView(this);
+        textView.setText(place);
+        textView.setHint("Place");
+        params = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT,LinearLayout.LayoutParams.WRAP_CONTENT);
+        params.weight = 1f;
+        layout.addView(textView,params);
+
+        layout.setOnClickListener(this);
 
         return layout;
     }
@@ -125,6 +153,50 @@ public class EditActivity extends ActionBarActivity implements TextWatcher{
             scheduleDBAdapter.saveSchedule(((EditText)ll.getChildAt(0)).getText().toString(),((EditText)ll.getChildAt(1)).getText().toString(),((EditText)ll.getChildAt(2)).getText().toString());
         }
         scheduleDBAdapter.close();
+    }
+
+    private PopupWindow mPopupWindow;
+
+    @Override
+    public void onClick(View v) {
+
+        mPopupWindow = new PopupWindow(this);
+
+        // レイアウト設定
+        View popupView = getLayoutInflater().inflate(R.layout.popup_layout, null);
+        popupView.findViewById(R.id.close_button).setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (mPopupWindow.isShowing()) {
+                    mPopupWindow.dismiss();
+                }
+            }
+        });
+        mPopupWindow.setContentView(popupView);
+
+        // 背景設定
+        //mPopupWindow.setBackgroundDrawable(getResources().getDrawable(R.drawable.popup_background));
+
+        // タップ時に他のViewでキャッチされないための設定
+        mPopupWindow.setOutsideTouchable(true);
+        mPopupWindow.setFocusable(true);
+
+        // 表示サイズの設定 今回は幅300dp
+        float width = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, 300, getResources().getDisplayMetrics());
+        mPopupWindow.setWindowLayoutMode((int) width, WindowManager.LayoutParams.WRAP_CONTENT);
+        mPopupWindow.setWidth((int) width);
+        mPopupWindow.setHeight(WindowManager.LayoutParams.WRAP_CONTENT);
+
+        // 画面中央に表示
+        mPopupWindow.showAtLocation(findViewById(R.id.scheduleLinearLayout), Gravity.CENTER, 0, 0);
+    }
+
+    @Override
+    protected void onDestroy() {
+        if (mPopupWindow != null && mPopupWindow.isShowing()) {
+            mPopupWindow.dismiss();
+        }
+        super.onDestroy();
     }
 
     protected void findViews(){
